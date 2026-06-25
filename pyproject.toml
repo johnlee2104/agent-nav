@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-nav"
+version = "0.1.0"
+description = "Self-maintaining, description-based codebase navigation index for AI agents"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "johnlee2104" }]
+keywords = ["code-navigation", "ai-agents", "codebase", "search", "llm", "context"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+]
+# Core is dependency-free (stdlib only). `--auto` shells out to the `claude` CLI;
+# it does not require the anthropic SDK.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://github.com/johnlee2104/agent-nav"
+Repository = "https://github.com/johnlee2104/agent-nav"
+Issues = "https://github.com/johnlee2104/agent-nav/issues"
+
+[project.scripts]
+agent-nav = "agent_nav.ledger:main"
+
+[tool.setuptools]
+packages = ["agent_nav"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
