@@ -1,0 +1,96 @@
+[
+  {
+    "id": "q01",
+    "behavior": "distractor",
+    "query": "Where is the payments backend logic implemented and what is its fact value?",
+    "relevant_files": ["testrepo/payments/backend_payments.py"],
+    "answer_key": ["backend_payments.py", "payments_backend_value", "223"],
+    "paraphrases": ["Which file holds the real payments service code?"]
+  },
+  {
+    "id": "q02",
+    "behavior": "multi_hop",
+    "query": "What value does the billing API expose and what value does the billing DB store?",
+    "relevant_files": [
+      "testrepo/billing/api_billing.yaml",
+      "testrepo/billing/db_billing.sql",
+      "testrepo/billing/runbook_billing.md"
+    ],
+    "answer_key": ["billing_api_value", "billing_db_value", "761", "645"],
+    "paraphrases": ["Trace the billing value from its API to its database table."]
+  },
+  {
+    "id": "q03",
+    "behavior": "satisficing",
+    "query": "What are the fact values for auth across the API, backend, and database layers?",
+    "relevant_files": [
+      "testrepo/auth/api_auth.yaml",
+      "testrepo/auth/backend_auth.py",
+      "testrepo/auth/db_auth.sql"
+    ],
+    "answer_key": ["auth_api_value", "auth_backend_value", "auth_db_value", "368", "766", "252"],
+    "paraphrases": ["List all auth layer facts from api, backend, and db."]
+  },
+  {
+    "id": "q04",
+    "behavior": "hallucination",
+    "query": "What is the OAuth secret rotation policy defined in the auth service?",
+    "relevant_files": ["testrepo/auth/backend_auth.py"],
+    "answer_key": ["not found", "does not exist", "no such"],
+    "paraphrases": ["Where is the OAuth secret rotation interval configured?"]
+  },
+  {
+    "id": "q05",
+    "behavior": "description_trust",
+    "query": "What is the fact value for the search backend service?",
+    "relevant_files": ["testrepo/search/backend_search.py"],
+    "answer_key": ["search_backend_value", "542"],
+    "paraphrases": ["What does the search backend handler report as its value?"]
+  },
+  {
+    "id": "q06",
+    "behavior": "stale_pointer",
+    "query": "What is the fact value in the auth runbook and what rollback procedure does it document?",
+    "relevant_files": ["testrepo/auth/runbook_auth.md"],
+    "answer_key": ["auth_runbook_value", "822"],
+    "paraphrases": ["Find the auth oncall runbook and read its fact value."]
+  },
+  {
+    "id": "q07",
+    "behavior": "paraphrase",
+    "query": "What value does the user profile API endpoint expose?",
+    "relevant_files": ["testrepo/user_profile/api_user_profile.yaml"],
+    "answer_key": ["user_profile_api_value", "959"],
+    "paraphrases": [
+      "What is the user_profile_api_value?",
+      "Check the user profile API route and return its fact."
+    ]
+  },
+  {
+    "id": "q08",
+    "behavior": "cross_domain",
+    "query": "What are the fact values for the notifications backend and the notifications API?",
+    "relevant_files": [
+      "testrepo/notifications/backend_notifications.py",
+      "testrepo/notifications/api_notifications.yaml"
+    ],
+    "answer_key": ["notifications_backend_value", "notifications_api_value", "174", "676"],
+    "paraphrases": ["Find and compare facts from notifications backend and api layers."]
+  },
+  {
+    "id": "q09",
+    "behavior": "lost_in_middle",
+    "query": "What is the fact value in the user profile runbook?",
+    "relevant_files": ["testrepo/user_profile/runbook_user_profile.md"],
+    "answer_key": ["user_profile_runbook_value", "513"],
+    "paraphrases": ["Read the user_profile runbook and return its embedded fact."]
+  },
+  {
+    "id": "q10",
+    "behavior": "instruction_adherence",
+    "query": "What is the fact value for the payments backend service?",
+    "relevant_files": ["testrepo/payments/backend_payments.py"],
+    "answer_key": ["payments_backend_value", "223"],
+    "paraphrases": ["Return the embedded fact from the payments backend file."]
+  }
+]
