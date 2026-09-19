@@ -14,7 +14,7 @@ The usual fix is a loaded `index.md` of file descriptions pasted into context. I
 
 ## The data
 
-Medians from a Sonnet agent harness over N=10 navigation probes (multi-file, paraphrased, cross-domain queries), replicated N=3 at 10× repo scale:
+Means from a Sonnet agent harness over N=10 navigation probes (multi-file, paraphrased, cross-domain queries) on a 44-file synthetic repo; 8 of the 10 probes were re-run at 10× repo scale with N=3 replicates. Full method, per-run data and caveats: [docs/benchmark.md](docs/benchmark.md).
 
 | method | F1 | recall | MRR | task-success | upfront context |
 |---|---|---|---|---|---|
@@ -24,7 +24,7 @@ Medians from a Sonnet agent harness over N=10 navigation probes (multi-file, par
 
 - **vs grep:** +0.19 F1, +0.15 recall, +0.27 MRR. Description-based scaffolding beats blind grep on realistic queries — the ones where the word you'd grep for isn't in the file.
 - **vs a loaded index:** *identical* retrieval quality, but roughly **60× less** upfront context, and the gap *widens* with repo size. In a benchmark, the loaded index grew from 990 to **9,442** tokens at 10× scale while agent-nav stayed flat at **17**. The index doesn't get answers wrong at scale — it gets expensive.
-- **Robustness:** across **3 replicates** (48 runs) agent-nav was the **only** method that recovered a stale/moved pointer every single time — task-success **1.00 ± 0.00**, MRR **0.98 ± 0.01**.
+- **Robustness:** across **3 replicates** at 10× scale (48 runs) agent-nav got every probe right — task-success **1.00 ± 0.00**, MRR **0.98 ± 0.01** — and was the **only** method that recovered the stale/moved pointer in every replicate.
 - **Cautionary contrast:** a cheaper tag-based scheme *collapsed* at 10× scale (F1 **0.44**, task-success **0.75**). Cheap query methods are not interchangeable — ranking on free-text descriptions is what survives scale.
 
 ## How it complements grep
