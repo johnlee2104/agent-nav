@@ -1,6 +1,35 @@
-# agent-nav
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/hero-light.svg">
+    <img src="docs/assets/hero-light.svg" width="100%" alt="An agent asks where retries are configured. grep -rn &quot;retry&quot; src/ finds no matches, because the code says backoff and attempts. agent-nav find &quot;where are retries configured&quot; returns src/http/backoff.py: retries failed HTTP calls with exponential backoff.">
+  </picture>
+</p>
 
-**A self-maintaining, description-based codebase navigation index for AI agents (and humans).**
+<h1 align="center">agent-nav</h1>
+
+<p align="center"><strong>Find files by purpose. Keep the map fresh.</strong></p>
+
+<p align="center">
+  A self-maintaining, description-based codebase navigation index for AI agents (and humans).
+</p>
+
+<p align="center">
+  <b>Purpose search</b> · finds files by what they do &nbsp;·&nbsp;
+  <b>Self-maintaining</b> · a pre-commit hook keeps it fresh &nbsp;·&nbsp;
+  <b>Stdlib only</b> · one Python file, no dependencies
+</p>
+
+<div align="center">
+
+[![CI](https://img.shields.io/github/actions/workflow/status/johnlee2104/agent-nav/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/johnlee2104/agent-nav/actions/workflows/ci.yml)
+[![python](https://img.shields.io/badge/python-3.11--3.13-3572A5?style=flat-square)](pyproject.toml)
+[![dependencies](https://img.shields.io/badge/dependencies-none-2a78d6?style=flat-square)](pyproject.toml)
+[![license](https://img.shields.io/badge/license-MIT-5B5BD6?style=flat-square)](LICENSE)
+
+</div>
+
+<br/>
 
 `agent-nav` is a **complement to grep, not a replacement.** grep finds exact strings; this finds files by *purpose* — and keeps itself fresh as the code changes, without bloating every task's context window.
 
@@ -15,6 +44,14 @@ The usual fix is a loaded `index.md` of file descriptions pasted into context. I
 ## The data
 
 Means from a Sonnet agent harness over N=10 navigation probes (multi-file, paraphrased, cross-domain queries) on a 44-file synthetic repo; 8 of the 10 probes were re-run at 10× repo scale with N=3 replicates. Full method, per-run data and caveats: [docs/benchmark.md](docs/benchmark.md).
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/context-scaling-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/context-scaling-light.svg">
+    <img src="docs/assets/context-scaling-light.svg" width="100%" alt="Upfront context per task. On the 44-file benchmark repo, a loaded index.md costs 990 tokens and agent-nav 17. On the 10x repo with 368 files, index.md costs 9,442 tokens and agent-nav still 17.">
+  </picture>
+</p>
 
 | method | F1 | recall | MRR | task-success | upfront context |
 |---|---|---|---|---|---|
