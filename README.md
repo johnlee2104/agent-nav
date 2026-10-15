@@ -87,12 +87,14 @@ python3 src/maintenance/ledger.py --help
 
 ### Mode B — pip install
 
+agent-nav is not on PyPI. Install it from GitHub, pinned to a release tag:
+
 ```bash
-pip install agent-nav
+pip install "git+https://github.com/johnlee2104/agent-nav@v0.2.0"
 agent-nav --help
 ```
 
-This gives you the `agent-nav` console script.
+This gives you the `agent-nav` console script. Drop `@v0.2.0` to track `main` instead.
 
 ### Where the index lives (both modes)
 
