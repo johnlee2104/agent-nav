@@ -1,0 +1,3 @@
+# The ledger is sorted, one row per line; union avoids conflicts on adjacent rows.
+# `agent-nav check` flags any duplicate row a union merge leaves behind.
+.agent-nav/ledger.jsonl merge=union

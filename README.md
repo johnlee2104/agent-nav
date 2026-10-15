@@ -105,10 +105,18 @@ The **tool code** location differs, but the **index data** is always a committed
 
 `.agent-nav/ledger.jsonl` is one JSON object per line — `{"path", "description", "keywords", "sha"}` — sorted by path. Commit it with your code.
 
+Add a union merge driver for it, so two branches that each update rows don't conflict on adjacent lines:
+
+```bash
+echo '.agent-nav/ledger.jsonl merge=union' >> .gitattributes
+```
+
+A union merge can keep both branches' rows for the same path. `check` flags that as **duplicate** (and the hook blocks it), so it can't land silently. Fix it by writing one merged description with `update <path> -d "..."`, which replaces every row for that path.
+
 ## Bootstrap a repo
 
 ```bash
-agent-nav check                       # lists files that have no ledger entry yet
+agent-nav check                       # lists tracked files that have no ledger entry yet
 # the agent reads those files and writes one-line purposes for each, as JSON:
 #   [{"path": "src/api/pager.py", "description": "...", "keywords": ["api","pagination"]}, ...]
 agent-nav ingest descriptions.json    # bulk-set entries (reads stdin if no file)
@@ -121,13 +129,23 @@ No model call is billed: the agent already reading your code supplies the descri
 ## Day-to-day (for the agent)
 
 ```bash
-agent-nav find "where retries are configured"        # ranked purpose search
+agent-nav find where retries are configured          # ranked purpose search (quotes optional)
 agent-nav update src/api/pager.py -d "cursor pagination for the public API" -k "api,pagination"
 git add .agent-nav/ledger.jsonl                       # stage the updated index
-agent-nav update src/api/old_pager.py                 # no -d => drops a deleted/renamed file
+agent-nav update src/a.py src/b.py --keep             # touched, purpose unchanged: refresh the sha only
+agent-nav ingest batch.json                           # several descriptions at once (no shell quoting)
+agent-nav update src/api/old_pager.py                 # no flags => drops a deleted/renamed file
+agent-nav show src/api/pager.py                       # read a row back
+agent-nav check src/api/pager.py                      # audit some paths (or the whole repo with no args)
 ```
 
-`update <path> -d "..." -k "..."` sets one entry (you write the text). `update <paths...>` with no `-d` drops entries for files that are gone.
+`update <path> -d "..." -k "..."` sets one entry (you write the text). The file doesn't need to be `git add`ed first. Only git-ignored files are refused. `update <paths...> --keep` is for files you touched whose purpose didn't change. `update <paths...>` with no flags drops entries for files that are not in the git index.
+
+Paths can be repo-relative or absolute, from any directory in the repo. Every command resolves them against the git toplevel. A path outside the repo, or inside a nested checkout, is refused before anything is written.
+
+Treat `find` output as a shortlist. Ranking is loose substring scoring, so pick by reading the description column rather than opening every hit.
+
+Run `check --staged` as its own command, then `git commit` as another. Chaining `git add … && agent-nav check --staged && git commit` turns a routine reject into a failed tool call.
 
 ## How freshness works
 
@@ -135,6 +153,17 @@ Two layers, neither calls a model:
 
 1. **Write-through nudge.** The CLAUDE.md block below tells the agent to `update` the entry whenever it substantially changes a file. This keeps the common case fresh in the same session that touched the code.
 2. **Pre-commit backstop.** `install-hook` adds a hook that runs `check --staged` and **blocks any commit that leaves the index stale**. It only compares hashes — no model call.
+
+`check --staged` blocks on four kinds of drift:
+
+- **stale**: a staged file whose content changed since its description was written. Fix with `update -d`, or `update --keep` if the purpose is unchanged.
+- **missing**: a staged text file with no entry yet.
+- **orphaned**: a row whose file is not in the commit. That covers a deleted or renamed file. It also covers a file that got a row but was never `git add`ed (`git add -N` doesn't count). The check reads the *staged* ledger, so rows you haven't staged are not this commit's business.
+- **duplicate**: several rows for one path, left by a union merge.
+
+It prints the exact fix command for each, then exits 1.
+
+For a vendored copy, the hook calls the script by its repo-relative path and skips itself when that file is absent. The hooks dir is shared by every worktree and branch, so each worktree runs its own copy, and a branch cut before you vendored the tool still commits.
 
 The `sha` field is the SHA-256 of the file's bytes when its description was written. A file is "stale" only when its current sha differs from the stored one, so re-running `update` (which rewrites the sha) clears the flag. The ledger data file itself is excluded from the index, so it never self-flags.
 
@@ -146,42 +175,50 @@ Paste one of these blocks into your agent's instructions file. **Swap in your ac
 
 ```markdown
 ## Codebase navigation
-Find files by purpose: `python3 src/maintenance/ledger.py find "<query>"` (grep still
-handles exact-string search). After adding or substantially changing a file, write a
-one-line purpose for it and record it: `python3 src/maintenance/ledger.py update <path>
--d "<purpose>" -k "kw1,kw2"`, then stage `.agent-nav/ledger.jsonl`. For a deleted/renamed
-file, just `update <path>` to drop its entry. Do NOT use `--auto` unless asked — you supply
-the description (no extra model call). The pre-commit hook blocks any commit that leaves the
-index stale.
+Find files by purpose: `python3 src/maintenance/ledger.py find "<query>"`. Pass your real
+question, never a placeholder (grep still handles exact-string search). After adding or
+substantially changing a file, write a one-line purpose for it and record it:
+`python3 src/maintenance/ledger.py update <path> -d "<purpose>" -k "kw1,kw2"`, then stage
+`.agent-nav/ledger.jsonl`. If you touched a file but its purpose is unchanged, use
+`update <paths...> --keep` instead. For a deleted/renamed file, just `update <path>` to drop
+its entry. Do NOT use `--auto` unless asked — you supply the description (no extra model
+call). Run `check --staged` as its own command before `git commit`; the pre-commit hook
+blocks any commit that leaves the index stale.
 ```
 
 **pip-install variant:**
 
 ```markdown
 ## Codebase navigation
-Find files by purpose: `agent-nav find "<query>"` (grep still handles exact-string search).
-After adding or substantially changing a file, write a one-line purpose for it and record it:
+Find files by purpose: `agent-nav find "<query>"`. Pass your real question, never a
+placeholder (grep still handles exact-string search). After adding or substantially changing
+a file, write a one-line purpose for it and record it:
 `agent-nav update <path> -d "<purpose>" -k "kw1,kw2"`, then stage `.agent-nav/ledger.jsonl`.
-For a deleted/renamed file, just `agent-nav update <path>` to drop its entry. Do NOT use
-`--auto` unless asked — you supply the description (no extra model call). The pre-commit hook
-blocks any commit that leaves the index stale.
+If you touched a file but its purpose is unchanged, use `agent-nav update <paths...> --keep`
+instead. For a deleted/renamed file, just `agent-nav update <path>` to drop its entry. Do NOT
+use `--auto` unless asked — you supply the description (no extra model call). Run
+`agent-nav check --staged` as its own command before `git commit`; the pre-commit hook blocks
+any commit that leaves the index stale.
 ```
 
 ## Commands
 
 | command | what it does | calls a model? |
 |---|---|---|
-| `find "<query>" [-n N]` | rank entries by purpose, print matches | no |
-| `update <path> -d "..." -k "..." [-s status]` | set one entry (you write the text) | no |
-| `update <paths...>` | drop entries for deleted/renamed files | no |
-| `ingest [file]` | bulk-set from JSON (stdin if no file) | no |
-| `check [--staged]` | report drift; exit non-zero if any | no |
+| `find <words...> [-n N]` | rank entries by purpose, print matches (quotes optional) | no |
+| `show <paths...>` | print each path's row as a JSON line; exit 1 if a path has none | no |
+| `update <path> -d "..." -k "..." [-s status]` | set one entry (you write the text). `-d` over 200 chars or `-k` over 6 keywords is **refused** (exit 2, nothing written), never truncated. A blank `-d` is refused too. `-k` replaces the keyword set; omit it to keep the existing keywords | no |
+| `update <paths...> --keep` | purpose unchanged: refresh only the sha, keeping description/keywords/status. Refuses the whole call (exit 1) if any path has no described row | no |
+| `update <paths...>` | the drop command: drops the row of every path not in the git index, naming each one. A tracked text file is not dropped; it asks for `-d` or `--keep` | no |
+| `ingest [file]` | the batch path: set many entries from a JSON array `[{path, description, keywords?, status?}]` (stdin if no file). Same rules as `-d`. Omitted keywords/status are inherited. Skipped paths are named with their reason (exit 1) | no |
+| `check [--staged \| paths...]` | report stale / missing / orphaned / duplicate drift (only for the given paths, if any); exit non-zero if any | no |
 | `install-hook` | install the pre-commit backstop | no |
+| `update <paths...> --auto` | describe via the `claude` CLI. **Refuses** any path whose row already has a description. `--redescribe` opts into overwriting. Each write prints `path: old → new` | **yes** |
 | `build --auto` | (re)describe every tracked file via the `claude` CLI (full rebuild) | **yes** |
 
 (Bare `build` without `--auto` does nothing but point you at the agent-driven flow above — `check` to list files, then `ingest`. The full index is built from agent-supplied descriptions, or via `build --auto`.)
 
-`--auto` (on `update`/`build`) is the only path that calls a model; it uses your Claude Code login and may count toward API/SDK usage. `-s/--status` tags an entry's lifecycle (`current`/`superseded`/`archived`/`draft`) for docs and runbooks.
+`--auto` (on `update`/`build`) is the only path that calls a model. It uses your Claude Code login with the `sonnet` alias (the latest Sonnet), and may count toward API/SDK usage. `-s/--status` tags an entry's lifecycle (`current`/`superseded`/`archived`/`draft`) for docs and runbooks.
 
 ## Caveats (honest)
 
