@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-10-15
+- README: install from GitHub (`pip install git+…@v0.2.0`). agent-nav is not on PyPI, so `pip install agent-nav` failed.
+- CI: tests also run on macOS.
+
 Refinements ported from a production fork of the ledger. Each one fixes a failure seen in real agent use:
 - `update <paths...> --keep`: refresh only the sha when a file's purpose is unchanged.
 - `show <paths...>` prints rows back. `check <paths...>` audits just those paths. `find` takes unquoted words.
